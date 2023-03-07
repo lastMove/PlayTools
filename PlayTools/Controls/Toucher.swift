@@ -44,6 +44,13 @@ class Toucher {
                 }
                 pointId = id
             }
+            debugPrint("================+TOUCHCAM+===============")
+            
+            debugPrint("BIGID:\(bigId)")
+            debugPrint("phase:\(phase)")
+            debugPrint("point:\(point)")
+            
+
             let resultingId = PTFakeMetaTouch.fakeTouchId(pointId, at: point, with: phase, in: keyWindow, on: keyView)
             if resultingId < 0 {
                 idMap.removeValue(forKey: pointId)
