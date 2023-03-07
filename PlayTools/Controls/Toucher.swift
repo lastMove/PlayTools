@@ -11,7 +11,7 @@ class Toucher {
     static weak var keyView: UIView?
     static var touchQueue = DispatchQueue.init(label: "playcover.toucher", qos: .userInteractive)
     static var nextId: Int = 0
-    static var idMap = [Int?](repeating: nil, count: 64)
+    static var idMap = [Int: Int]()
     /**
      on invocations with phase "began", an int id is allocated, which can be used later to refer to this touch point.
      on invocations with phase "ended", id is set to nil representing the touch point is no longer valid.
@@ -38,7 +38,7 @@ class Toucher {
             }
             var pointId: Int = 0
             if phase != UITouch.Phase.began {
-                guard let id = idMap.firstIndex(of: bigId) else {
+                guard let id = idMap[bigId] else {
                     // sending other phases before began is no-op
                     return
                 }
@@ -46,7 +46,7 @@ class Toucher {
             }
             let resultingId = PTFakeMetaTouch.fakeTouchId(pointId, at: point, with: phase, in: keyWindow, on: keyView)
             if resultingId < 0 {
-                idMap[pointId] = nil
+                idMap.removeValue(forKey: pointId)
             } else {
                 idMap[resultingId] = bigId
             }
