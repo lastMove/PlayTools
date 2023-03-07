@@ -11,13 +11,16 @@ protocol Action {
 
 class ButtonAction: Action {
     func invalidate() {
-        Toucher.touchcam(point: point, phase: UITouch.Phase.ended, tid: &id)
+        guard let id = id else {
+            return 
+        }
+        SimpleToucher.touch(point: point, id: id, phase: .ended)
     }
 
     let keyCode: Int
     let keyName: String
     let point: CGPoint
-    var id: Int?
+    var id: Int? = 0
 
     init(keyCode: Int, keyName: String, point: CGPoint) {
         self.keyCode = keyCode
@@ -41,9 +44,13 @@ class ButtonAction: Action {
 
     func update(pressed: Bool) {
         if pressed {
-            Toucher.touchcam(point: point, phase: UITouch.Phase.began, tid: &id)
+            let newId = UUID().hashValue
+            self.id = newId
+            SimpleToucher.touch(point: point, id: newId, phase: .began)
         } else {
-            Toucher.touchcam(point: point, phase: UITouch.Phase.ended, tid: &id)
+            if let id = id {
+                SimpleToucher.touch(point: point, id: id, phase: .ended)
+            }
         }
     }
 }
