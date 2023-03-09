@@ -27,10 +27,25 @@ class PlayInput {
         }
         PlayInput.buttonHandlers[key]!.append(handler)
     }
+    
+    var cacheTidForFakeTouchOnCursor: Int?
+    
+    func fakeTouchOnCursorLocation(keycode: UInt16, name: String, pressed: Bool) {
+        debugPrint("FAKETOUCHONCURSOR :\(name), \(keycode), \(pressed)")
+        guard let cursorLocation = PlayMice.shared.cursorPos() else {
+            return
+        }
+        debugPrint(cursorLocation)
+        
+        PlayInput.touchQueue.async(qos: .userInteractive) {
+            Toucher.touchcam(point: cursorLocation, phase: pressed ? .began : .ended, tid: &self.cacheTidForFakeTouchOnCursor)
+        }
+    }
 
     func keyboardHandler(_ keyCode: UInt16, _ pressed: Bool) -> Bool {
         let name = KeyCodeNames.virtualCodes[keyCode] ?? "Btn"
         guard let handlers = PlayInput.buttonHandlers[name] else {
+            fakeTouchOnCursorLocation(keycode: keyCode, name: name, pressed: pressed)
             return false
         }
         var mapped = false
