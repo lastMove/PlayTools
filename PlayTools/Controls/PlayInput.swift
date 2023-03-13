@@ -31,11 +31,9 @@ class PlayInput {
     var cacheTidForFakeTouchOnCursor: Int?
     
     func fakeTouchOnCursorLocation(keycode: UInt16, name: String, pressed: Bool) {
-        debugPrint("FAKETOUCHONCURSOR :\(name), \(keycode), \(pressed)")
         guard let cursorLocation = PlayMice.shared.cursorPos() else {
             return
         }
-        debugPrint(cursorLocation)
         
         PlayInput.touchQueue.async(qos: .userInteractive) {
             Toucher.touchcam(point: cursorLocation, phase: pressed ? .began : .ended, tid: &self.cacheTidForFakeTouchOnCursor)
@@ -150,6 +148,7 @@ class PlayInput {
     func setup() {
         GCKeyboard.coalesced?.keyboardInput?.keyChangedHandler = nil
         GCController.current?.extendedGamepad?.valueChangedHandler = controllerButtonHandler
+        
     }
 
     static public func cmdPressed() -> Bool {
@@ -195,11 +194,10 @@ class PlayInput {
         let main = OperationQueue.main
 
         centre.addObserver(forName: NSNotification.Name.GCControllerDidConnect, object: nil, queue: main) { _ in
-            if !mode.visible {
-                self.setup()
-            }
             if EditorController.shared.editorMode {
                 self.toggleEditor(show: true)
+            } else {
+                self.setup()
             }
         }
         parseKeymap()
