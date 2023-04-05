@@ -2,6 +2,38 @@ import Foundation
 import GameController
 import UIKit
 
+class FakeTouchOnCursorLocation {
+    
+    static var instance = FakeTouchOnCursorLocation()
+    
+    var cacheTidForFakeTouchOnCursor: Int?
+
+    init() {
+        
+    }
+    
+    func unhandledKeyPressed(keycode: UInt16, name: String, pressed: Bool) {
+        guard let cursorLocation = PlayMice.shared.cursorPos() else {
+            return
+        }
+        
+        PlayInput.touchQueue.async(qos: .userInteractive) {
+            Toucher.touchcam(point: cursorLocation, phase: pressed ? .began : .ended, tid: &self.cacheTidForFakeTouchOnCursor)
+        }
+    }
+    
+    func moved() {
+        guard let cursorLocation = PlayMice.shared.cursorPos() else {
+            return
+        }
+        if cacheTidForFakeTouchOnCursor != nil {
+            PlayInput.touchQueue.async(qos: .userInteractive) {
+                Toucher.touchcam(point: cursorLocation, phase: .moved, tid: &self.cacheTidForFakeTouchOnCursor)
+            }
+        }
+    }
+}
+
 class PlayInput {
     static let shared = PlayInput()
     var actions = [Action]()
@@ -28,22 +60,10 @@ class PlayInput {
         PlayInput.buttonHandlers[key]!.append(handler)
     }
     
-    var cacheTidForFakeTouchOnCursor: Int?
-    
-    func fakeTouchOnCursorLocation(keycode: UInt16, name: String, pressed: Bool) {
-        guard let cursorLocation = PlayMice.shared.cursorPos() else {
-            return
-        }
-        
-        PlayInput.touchQueue.async(qos: .userInteractive) {
-            Toucher.touchcam(point: cursorLocation, phase: pressed ? .began : .ended, tid: &self.cacheTidForFakeTouchOnCursor)
-        }
-    }
-
     func keyboardHandler(_ keyCode: UInt16, _ pressed: Bool) -> Bool {
         let name = KeyCodeNames.virtualCodes[keyCode] ?? "Btn"
         guard let handlers = PlayInput.buttonHandlers[name] else {
-            fakeTouchOnCursorLocation(keycode: keyCode, name: name, pressed: pressed)
+            FakeTouchOnCursorLocation.instance.unhandledKeyPressed(keycode: keyCode, name: name, pressed: pressed)
             return false
         }
         var mapped = false
@@ -261,6 +281,7 @@ class PlayInput {
             let mapped = self.keyboardHandler(keycode, pressed)
             return mapped
         }, mouseMoved: {deltaX, deltaY in
+            FakeTouchOnCursorLocation.instance.moved()
             if !PlayInput.keyboardMapped {
                 return false
             }
